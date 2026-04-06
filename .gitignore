@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.env
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# Data files (太大，不上传)
+*.csv
+*.json
+
+# AWS credentials
+.aws/
+
+# OS
+.DS_Store
+Thumbs.db
