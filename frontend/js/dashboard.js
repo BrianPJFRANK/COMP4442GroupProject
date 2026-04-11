@@ -80,7 +80,7 @@ async function updateSpeedData(driverID) {
     const data = await ApiService.getSpeedData(driverID);
     if (data.status === 'success') {
         renderChart(data.speedData);
-        updateAlerts(data.speedData);
+        updateAlerts(data.speedData, data.warning);
         document.getElementById('last-update').innerText = `Last update: ${new Date().toLocaleTimeString()}`;
     }
 }
@@ -127,17 +127,19 @@ function renderChart(speedLines) {
     });
 }
 
-function updateAlerts(speedData) {
+function updateAlerts(speedData, isWarning) {
     const alertsList = document.getElementById('alerts-list');
     const overspeeding = speedData.filter(d => d.isOverspeed === 1);
     
-    if (overspeeding.length > 0) {
-        alertsList.innerHTML = overspeeding.slice(-5).map(d => `
-            <li class="list-group-item list-group-item-danger">
-                High Speed: ${d.speed} km/h at ${d.time}
+    if (isWarning || overspeeding.length > 0) {
+        // Show red banner or intense warning
+        const warningHTML = overspeeding.map(d => `
+            <li class="list-group-item list-group-item-danger fw-bold">
+                ⚠️ HIGH SPEED DETECTED: ${Math.round(d.speed)} km/h at ${d.time}
             </li>
         `).join('');
+        alertsList.innerHTML = warningHTML || '<li class="list-group-item list-group-item-danger fw-bold">⚠️ DANGEROUS DRIVING BEHAVIOR DETECTED!</li>';
     } else {
-        alertsList.innerHTML = '<li class="list-group-item list-group-item-success">No recent speed violations.</li>';
+        alertsList.innerHTML = '<li class="list-group-item list-group-item-success">Normal driving. No recent speed violations.</li>';
     }
 }
