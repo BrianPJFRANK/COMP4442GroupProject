@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+const API_BASE_URL = 'http://comp4442-gp-DrivingBehaviorAPI-env.eba-i62unp3j.us-east-1.elasticbeanstalk.com/api'; // Update to Elastic Beanstalk URL
 
 const ApiService = {
     async getSummary() {

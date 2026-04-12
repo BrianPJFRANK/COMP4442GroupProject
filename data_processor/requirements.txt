@@ -1,7 +1,6 @@
-fastapi
-uvicorn
-boto3
+pyspark
 pandas
 python-dotenv
-pymysql
 sqlalchemy
+pymysql
+boto3

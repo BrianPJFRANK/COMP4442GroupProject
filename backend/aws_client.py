@@ -13,7 +13,7 @@ class AWSClient:
         self.bucket = os.getenv('AWS_S3_BUCKET', 'your-s3-bucket-name')
 
     def load_summary_from_s3(self, key='data/summary.json'):
-        """從 S3 讀取預先計好嘅 Summary JSON"""
+
         try:
             response = self.s3.get_object(Bucket=self.bucket, Key=key)
             content = response['Body'].read().decode('utf-8')
@@ -22,8 +22,8 @@ class AWSClient:
             print(f"Error loading summary from S3: {e}")
             return None
 
-    def load_raw_csv_from_s3(self, key='data/cleaned_data.csv'):
-        """從 S3 讀取清洗過嘅原始 CSV 做 Cache"""
+    def load_raw_csv_from_s3(self, key='cleaned_data.csv'):
+
         try:
             response = self.s3.get_object(Bucket=self.bucket, Key=key)
             csv_content = response['Body'].read().decode('utf-8')
@@ -32,7 +32,7 @@ class AWSClient:
             print(f"Error loading raw CSV from S3: {e}")
             return None
 
-    # Local Fallback (開發測試用)
+    # Local Fallback
     def load_summary_local(self, path='../data_processor/summary.json'):
         if os.path.exists(path):
             with open(path, 'r', encoding='utf-8') as f:

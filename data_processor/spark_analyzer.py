@@ -3,7 +3,7 @@ import json
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, sum as _sum, count, first
 
-def run_spark_analysis(input_csv, output_json):
+def run_spark_analysis(input_csv, output_dummy=None):
     # 1. Initialize Spark Session
     spark = SparkSession.builder \
         .appName("DriverBehaviorSummary") \
@@ -29,39 +29,39 @@ def run_spark_analysis(input_csv, output_json):
         _sum("neutralSlideTime").alias("totalNeutralSlideTimeSeconds")
     )
 
-    # 4. Format the output to match API Contract
-    # { "status": "success", "data": [...] }
-    rows = summary_df.collect()
-    data_list = []
-    for row in rows:
-        data_list.append({
-            "driverID": row["driverID"],
-            "carPlateNumber": row["carPlateNumber"],
-            "totalOverspeedCount": int(row["totalOverspeedCount"] or 0),
-            "totalFatigueCount": int(row["totalFatigueCount"] or 0),
-            "totalOverspeedTimeSeconds": int(row["totalOverspeedTimeSeconds"] or 0),
-            "totalNeutralSlideTimeSeconds": int(row["totalNeutralSlideTimeSeconds"] or 0)
-        })
-
-    result = {
-        "status": "success",
-        "data": data_list
-    }
-
-    # 5. Save to JSON file
-    with open(output_json, 'w', encoding='utf-8') as f:
-        json.dump(result, f, ensure_ascii=False, indent=4)
+    print("Saving summary analysis to MySQL Database...")
+    try:
+        import os
+        from sqlalchemy import create_engine
+        from dotenv import load_dotenv
         
-    print(f"Summary analysis completed. Results saved to {output_json}")
+        load_dotenv()
+        user = os.getenv("DB_USER", "root")
+        password = os.getenv("DB_PASSWORD", "your_password")
+        host = os.getenv("DB_HOST", "127.0.0.1")
+        port = os.getenv("DB_PORT", "3306")
+        db_name = os.getenv("DB_NAME", "driving_analysis")
+        
+        engine = create_engine(f"mysql+pymysql://{user}:{password}@{host}:{port}/{db_name}")
+        
+        # Convert Spark DataFrame to Pandas and write to MySQL
+        pd_df = summary_df.toPandas()
+        
+        # Fill any missing values with 0
+        pd_df = pd_df.fillna(0)
+        
+        pd_df.to_sql('summary', con=engine, if_exists='replace', index=False)
+        print(f"Successfully saved {len(pd_df)} summary records to database!")
+    except Exception as e:
+        print(f"Error saving to database: {e}")
+
     spark.stop()
 
 if __name__ == "__main__":
     # In local testing, we use the cleaned_data.csv we just created
-    # In production (AWS EMR), this would point to S3 paths
     INPUT_PATH = "cleaned_data.csv"
-    OUTPUT_PATH = "summary.json"
     
     if os.path.exists(INPUT_PATH):
-        run_spark_analysis(INPUT_PATH, OUTPUT_PATH)
+        run_spark_analysis(INPUT_PATH, None)
     else:
         print(f"Error: {INPUT_PATH} not found. Please run Story 1 (data_preprocessing.py) first.")

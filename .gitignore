@@ -12,6 +12,7 @@ venv/
 # Data files (太大，不上传)
 *.csv
 *.json
+*.zip
 
 # AWS credentials
 .aws/
@@ -19,3 +20,5 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+
+Log
