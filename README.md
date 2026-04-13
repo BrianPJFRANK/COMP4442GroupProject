@@ -28,6 +28,22 @@ COMP4442GroupProject/
 
 ## 🚀 Local Development Setup
 
+### Environment Variables
+Before running the application locally, you must create a `.env` file in both the `backend/` and `data_processor/` directories. Here is the required format:
+
+```ini
+# Database Settings (Local for now, change to RDS later)
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=driving_analysis
+
+# AWS S3 Settings (Set USE_S3=true to use S3)
+USE_S3=false
+AWS_S3_BUCKET=your-s3-bucket-name
+```
+
 ### 1. Data Preprocessing
 Navigate to `data_processor/` and run the Pandas script to merge the raw daily logs into a standard format:
 ```bash

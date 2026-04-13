@@ -47,6 +47,9 @@ async def lifespan(app: FastAPI):
     if os.getenv('USE_S3', 'false').lower() == 'true':
 
         raw_cache = aws.load_raw_csv_from_s3()
+        if raw_cache is None:
+            print("Warning: S3 loading failed. Falling back to local CSV data.")
+            raw_cache = aws.load_raw_local('../data_processor/cleaned_data.csv')
 
     else:
 
@@ -99,18 +102,23 @@ def read_root():
 async def get_summary():
 
     global db_client
+    aws = AWSClient()
 
     if db_client is None:
+        print("Warning: Database client unavailable. Falling back to local summary JSON.")
+        return aws.load_summary_local('../data_processor/summary.json')
 
-        raise HTTPException(status_code=503, detail="Database client is not available yet.")    
+    try:
+        summary_data = db_client.get_summary()
 
-    summary_data = db_client.get_summary()
+        if summary_data is None:
+            print("Warning: Database returned None. Falling back to local summary JSON.")
+            return aws.load_summary_local('../data_processor/summary.json')
 
-    if summary_data is None:
-
-        raise HTTPException(status_code=500, detail="Failed to fetch summary from database.") 
-
-    return summary_data
+        return summary_data
+    except Exception as e:
+        print(f"Warning: Database query failed ({e}). Falling back to local summary JSON.")
+        return aws.load_summary_local('../data_processor/summary.json')
 
 # Phase 4: Speed Monitoring endpoint fetching from Replay
 
@@ -126,6 +134,3 @@ async def get_speed_monitoring(driverID: str):
         raise HTTPException(status_code=503, detail="Replay engine is not ready.")
 
     return replay_engine.get_next_batch(driverID)
-
-
-

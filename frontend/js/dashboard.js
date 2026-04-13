@@ -15,14 +15,14 @@ async function initDashboard() {
         selectDriver(summary.data[0].driverID);
     }
 
-    // Set 30s refresh as per plan
+    // Set 3s refresh as per plan (README specifies auto-updates every 3 seconds)
     refreshInterval = setInterval(async () => {
         if (currentDriverID) {
             await updateSpeedData(currentDriverID);
         }
         const updatedSummary = await ApiService.getSummary();
         renderDriverSummaryInfo(updatedSummary.data.find(d => d.driverID === currentDriverID));
-    }, 30000);
+    }, 3000); // Changed from 30000 (30 seconds) to 3000 (3 seconds)
 }
 
 function renderDriverList(drivers) {
@@ -54,6 +54,15 @@ async function selectDriver(driverID) {
         el.classList.toggle('active', el.getAttribute('data-driver-id') === driverID);
     });
 
+    // Instantly clear the chart and alert list while waiting for new data
+    if (speedChart) {
+        speedChart.destroy();
+        speedChart = null;
+    }
+    document.getElementById('alerts-list').innerHTML = '<li class="list-group-item text-muted">Loading driver data...</li>';
+    document.getElementById('live-behaviors').innerHTML = '<p class="text-muted">Loading driver data...</p>';
+    document.getElementById('last-update').innerText = 'Loading...';
+
     // Fetch and render data
     const summary = await ApiService.getSummary();
     const driverInfo = summary.data.find(d => d.driverID === driverID);
@@ -81,7 +90,10 @@ async function updateSpeedData(driverID) {
     if (data.status === 'success') {
         renderChart(data.speedData);
         updateAlerts(data.speedData, data.warning);
-        document.getElementById('last-update').innerText = `Last update: ${new Date().toLocaleTimeString()}`;
+        updateLiveBehaviors(data.speedData); // New function to render live behaviors
+        // Use the global simulated time from the backend instead of the local computer time
+        const simTime = data.global_time || new Date().toLocaleTimeString();
+        document.getElementById('last-update').innerText = `Simulation Time: ${simTime}`;
     }
 }
 
@@ -142,4 +154,47 @@ function updateAlerts(speedData, isWarning) {
     } else {
         alertsList.innerHTML = '<li class="list-group-item list-group-item-success">Normal driving. No recent speed violations.</li>';
     }
+}
+
+// New function to update the live behaviors box based on the most recent data point
+function updateLiveBehaviors(speedData) {
+    if (!speedData || speedData.length === 0) return;
+    
+    // Grab the latest record
+    const latest = speedData[speedData.length - 1];
+    const container = document.getElementById('live-behaviors');
+
+    // Helper formatter
+    const getBadge = (isActive, activeText, inactiveText) => {
+        return isActive === 1 
+            ? `<span class="badge bg-warning text-dark">${activeText}</span>`
+            : `<span class="badge bg-success">${inactiveText}</span>`;
+    };
+
+    container.innerHTML = `
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                Fatigue Driving 
+                ${getBadge(latest.isFatigueDriving, 'Detected', 'Normal')}
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                Rapid Slowdown 
+                ${getBadge(latest.isRapidlySlowdown, 'Active', 'Normal')}
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                Neutral Slide (Secs)
+                ${latest.isNeutralSlide === 1 
+                    ? `<span class="badge bg-warning text-dark">Active (${latest.neutralSlideTime}s)</span>` 
+                    : `<span class="badge bg-success">Inactive</span>`}
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                Harsh Throttle/Stop
+                ${getBadge(latest.isHthrottleStop, 'Active', 'Stable')}
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                Oil Leak Status
+                ${getBadge(latest.isOilLeak, 'Leak Detected', 'Normal')}
+            </li>
+        </ul>
+    `;
 }

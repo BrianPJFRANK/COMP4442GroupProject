@@ -11,7 +11,8 @@ class ReplayModule:
         self.raw_df = self.raw_df.sort_values(by=['driverID', 'Time'])
         self.driver_data = {str(driver): df.reset_index(drop=True) for driver, df in self.raw_df.groupby('driverID')}
         self.driver_pointers = {driver: 0 for driver in self.driver_data.keys()}
-        self.simulated_start_time = self.raw_df['Time'].min()
+        # Start at exactly 2017-01-01 08:00:00, which is the exact beginning of the dataset timeframes
+        self.simulated_start_time = pd.to_datetime('2017-01-01 08:00:00')
         self.real_start_time = time.time()
         self.time_multiplier = 10  
         print(f"Replay Tracking {len(self.driver_data)} drivers.")
@@ -40,7 +41,8 @@ class ReplayModule:
         while target_idx < len(df) and df.at[target_idx, 'Time'] <= current_sim_time:
             target_idx += 1
             
-        start_idx = max(current_idx, target_idx - 10)
+        # Always return a sliding window of the last 20 records so the chart is always full
+        start_idx = max(0, target_idx - 20)
             
         batch = df.iloc[start_idx:target_idx]
         self.driver_pointers[driver_id] = target_idx
@@ -58,7 +60,16 @@ class ReplayModule:
             speed_data.append({
                 'time': row['Time'].strftime('%H:%M:%S') if pd.notnull(row['Time']) else '00:00:00',
                 'speed': speed_val,
-                'isOverspeed': is_over
+                'isOverspeed': is_over,
+                'isRapidlySlowdown': int(row.get('isRapidlySlowdown', 0) if not pd.isna(row.get('isRapidlySlowdown')) else 0),
+                'isNeutralSlide': int(row.get('isNeutralSlide', 0) if not pd.isna(row.get('isNeutralSlide')) else 0),
+                'isNeutralSlideFinished': int(row.get('isNeutralSlideFinished', 0) if not pd.isna(row.get('isNeutralSlideFinished')) else 0),
+                'neutralSlideTime': float(row.get('neutralSlideTime', 0) if not pd.isna(row.get('neutralSlideTime')) else 0),
+                'isOverspeedFinished': int(row.get('isOverspeedFinished', 0) if not pd.isna(row.get('isOverspeedFinished')) else 0),
+                'overspeedTime': float(row.get('overspeedTime', 0) if not pd.isna(row.get('overspeedTime')) else 0),
+                'isFatigueDriving': int(row.get('isFatigueDriving', 0) if not pd.isna(row.get('isFatigueDriving')) else 0),
+                'isHthrottleStop': int(row.get('isHthrottleStop', 0) if not pd.isna(row.get('isHthrottleStop')) else 0),
+                'isOilLeak': int(row.get('isOilLeak', 0) if not pd.isna(row.get('isOilLeak')) else 0)
             })
             
         return {

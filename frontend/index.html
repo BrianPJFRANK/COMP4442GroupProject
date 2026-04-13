@@ -47,19 +47,34 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-md-6">
+                    <!-- Column 1: Historical Summary -->
+                    <div class="col-md-4">
                         <div class="card shadow-sm mb-4">
-                            <div class="card-header">
-                                <h5 class="mb-0">Selected Driver Details</h5>
+                            <div class="card-header bg-secondary text-white">
+                                <h5 class="mb-0">Historical Summary</h5>
                             </div>
                             <div class="card-body" id="driver-details">
                                 <p class="text-muted">Select a driver from the list to see detailed statistics.</p>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    
+                    <!-- Column 2: Live Behavior Metrics -->
+                    <div class="col-md-4">
                         <div class="card shadow-sm mb-4">
-                            <div class="card-header">
+                            <div class="card-header bg-info text-dark">
+                                <h5 class="mb-0">Live Driver Behavior</h5>
+                            </div>
+                            <div class="card-body" id="live-behaviors">
+                                <p class="text-muted">Waiting for stream...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 3: Alerts and Violations -->
+                    <div class="col-md-4">
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-danger text-white">
                                 <h5 class="mb-0">Alerts / Violations</h5>
                             </div>
                             <div class="card-body p-0">
